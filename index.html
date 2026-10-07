@@ -1,0 +1,490 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Askıda İyilik</title>
+<meta name="description" content="Okuldaki herkesin birbirine yardım edebildiği okul içi iyilik hareketi.">
+<meta name="color-scheme" content="dark">
+<!-- Bilerek dış kaynak yok (font, analitik, CDN): sayfa ziyaretçinin hiçbir verisini üçüncü tarafa göndermez. -->
+<style>
+:root{
+  --bg:#14130f; --bg2:#1d1b16; --ink:#f3ede1; --muted:#b5ab98; --line:#3a352b;
+  --accent:#e9a23b; --green:#7fb79a;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;
+  display:flex; flex-direction:column; min-height:100dvh; height:100dvh; overflow:hidden;
+}
+button{
+  font:inherit; font-size:14px; color:inherit; background:transparent; cursor:pointer;
+  border:1px solid var(--line); border-radius:999px; padding:7px 14px; white-space:nowrap;
+}
+button:hover:not(:disabled){border-color:var(--muted)}
+button:disabled{opacity:.35; cursor:default}
+button[aria-pressed="true"]{background:var(--ink); color:var(--bg); border-color:var(--ink)}
+button:focus-visible,a:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+
+/* Üst şerit */
+header.ust{display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px 16px;
+  padding:14px 24px; border-bottom:1px solid var(--line)}
+.marka{display:flex; align-items:center; gap:10px; color:var(--ink); text-decoration:none; font-weight:700; font-size:17px}
+.marka small{color:var(--muted); font-weight:500; font-size:13px}
+.marka svg{width:26px; height:26px}
+.araclar{display:flex; gap:6px; flex-wrap:wrap}
+
+/* Sahneler */
+main{position:relative; flex:1; min-height:0}
+.slayt{
+  position:absolute; inset:0; margin:0 auto; max-width:1240px; overflow-y:auto;
+  display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:24px 56px;
+  align-items:center; align-content:center; padding:32px 48px;
+  opacity:0; visibility:hidden; transform:translateY(14px);
+  transition:opacity .5s ease, transform .5s ease, visibility 0s linear .5s;
+}
+.slayt.aktif{opacity:1; visibility:visible; transform:none; transition:opacity .5s ease, transform .5s ease}
+.ust-baslik{color:var(--accent); font-size:13px; font-weight:650; letter-spacing:.14em; text-transform:uppercase; margin-bottom:16px}
+.metin h1,.metin h2{font-size:clamp(28px,4vw,50px); line-height:1.08; letter-spacing:-.02em; margin-bottom:22px; text-wrap:balance}
+.metin p,.metin li{font-size:clamp(16px,1.35vw,19px); line-height:1.6; color:#e4ddcf; max-width:34em}
+.metin p{margin-bottom:14px}
+.metin ul,.metin ol{margin:0 0 16px 1.2em; display:grid; gap:8px}
+.metin li::marker{color:var(--accent); font-weight:700}
+.metin strong{color:var(--ink)}
+.metin .kucuk{font-size:14px; color:var(--muted); margin-top:20px}
+.vurgu{color:var(--accent)}
+.pano{background:var(--bg2); border:1px solid var(--line); border-radius:12px; padding:12px 16px; margin-bottom:14px; max-width:34em}
+.metin .pano p{margin:0; font-size:clamp(15px,1.2vw,17px)}
+.kart{display:inline-block; width:.75em; height:.95em; border-radius:2px; margin:0 .3em 0 .1em; vertical-align:-.1em}
+
+.gorsel{position:relative; justify-self:center; height:min(520px, calc(100dvh - 230px)); aspect-ratio:1; max-width:100%}
+.gorsel img,.gorsel svg{position:absolute; inset:0; width:100%; height:100%; border-radius:24px; object-fit:cover; display:block}
+.gorsel img{display:none}
+.gorsel.resimli img{display:block}
+.gorsel.resimli svg{display:none}
+
+.not{display:none; grid-column:1 / -1; background:var(--bg2); border:1px solid var(--line); border-left:3px solid var(--accent);
+  border-radius:12px; padding:14px 18px; font-size:15px; line-height:1.55; color:var(--muted)}
+.not b{color:var(--ink)}
+body.notlar-acik .not{display:block}
+
+/* Alt şerit */
+footer.alt{display:flex; align-items:center; gap:10px; padding:12px 24px; border-top:1px solid var(--line)}
+#sayac{font-variant-numeric:tabular-nums; min-width:5em; text-align:center; color:var(--muted); font-size:14px}
+.bosluk{flex:1}
+.ipucu{color:var(--muted); font-size:13px}
+.ilerleme{height:2px; background:var(--line)}
+.ilerleme span{display:block; height:100%; width:0; background:var(--accent); transition:width .4s ease}
+
+/* Hareketi durdur */
+body.durgun svg *{animation-play-state:paused !important}
+body.durgun .slayt,body.durgun .ilerleme span{transition:none}
+
+@media (max-width:760px){
+  header.ust{padding:10px 16px}
+  .marka small,.ipucu{display:none}
+  button{font-size:13px; padding:6px 11px}
+  .slayt{grid-template-columns:1fr; align-content:start; gap:20px; padding:20px 16px 28px}
+  .gorsel{order:-1; height:min(300px, 36dvh)}
+  footer.alt{padding:10px 16px}
+}
+</style>
+
+<!-- Çizim stilleri ayrı tutulur: "Görseli indir" SVG'yi bu stillerle birlikte dosyaya yazar. -->
+<style id="svg-stil">
+.s-zemin{fill:#1f1c17}
+.s-cizgi{fill:none;stroke:#f3ede1;stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+.s-ince{fill:none;stroke:#4a4337;stroke-width:2;stroke-linecap:round}
+.s-kisi{fill:#2e2a22;stroke:#f3ede1;stroke-width:3;stroke-linejoin:round}
+.s-etiket{fill:#efe6d3}
+.s-bos{fill:none;stroke:#e9a23b;stroke-width:3;stroke-dasharray:7 6}
+.s-vurgu{fill:#e9a23b}
+.s-yesil{fill:#7fb79a}
+.s-ihtiyac{fill:none;stroke:#e9a23b;stroke-width:4;stroke-linecap:round}
+.s-yardim{fill:none;stroke:#7fb79a;stroke-width:4;stroke-linecap:round}
+.s-cizik{stroke:#e06a55;stroke-width:6;stroke-linecap:round}
+.s-yazi{fill:#f3ede1;font:600 15px system-ui,-apple-system,"Segoe UI",sans-serif;text-anchor:middle}
+.s-yazi-kucuk{fill:#f3ede1;font:600 12.5px system-ui,-apple-system,"Segoe UI",sans-serif;text-anchor:middle}
+.s-yazi-k{fill:#2a2620;font:700 15px system-ui,-apple-system,"Segoe UI",sans-serif;text-anchor:middle}
+.s-yazi-v{fill:#e9a23b;font:700 14px system-ui,-apple-system,"Segoe UI",sans-serif;text-anchor:middle}
+.s-soluk{fill:#b5ab98;font:500 14px system-ui,-apple-system,"Segoe UI",sans-serif;text-anchor:middle}
+.s-buyuk{fill:#e9a23b;font:800 64px system-ui,-apple-system,"Segoe UI",sans-serif;text-anchor:middle}
+.akis{stroke-dasharray:8 12;animation:s-akis 2.4s linear infinite}
+.sallan{transform-box:view-box;animation:s-sallan 4.5s ease-in-out infinite}
+.nabiz{animation:s-nabiz 2.6s ease-in-out infinite}
+.yolcu{animation:s-yolcu 6s ease-in-out infinite}
+@keyframes s-akis{to{stroke-dashoffset:-80}}
+@keyframes s-sallan{0%,100%{transform:rotate(-3.5deg)}50%{transform:rotate(3.5deg)}}
+@keyframes s-nabiz{0%,100%{opacity:.35}50%{opacity:1}}
+@keyframes s-yolcu{0%,8%{transform:translateY(0)}25%,33%{transform:translateY(90px)}50%,58%{transform:translateY(180px)}75%,100%{transform:translateY(270px)}}
+</style>
+</head>
+<body>
+
+<header class="ust">
+  <a class="marka" href="#1">
+    <svg viewBox="0 0 26 26" aria-hidden="true"><path d="M13 2v7q0 5-4.5 5T4 10" fill="none" stroke="#e9a23b" stroke-width="2.4" stroke-linecap="round"/><rect x="9" y="15" width="12" height="10" rx="2.5" fill="#efe6d3"/></svg>
+    Askıda İyilik <small>okul içi iyilik hareketi</small>
+  </a>
+  <div class="araclar">
+    <button id="hareket" type="button" aria-pressed="false">Hareketi durdur Ⅱ</button>
+    <button id="notlar" type="button" aria-pressed="false">Anlatım notları</button>
+    <button id="tamekran" type="button" aria-pressed="false">Tam ekran ↗</button>
+  </div>
+</header>
+
+<main id="sahne">
+
+  <!-- 01 — Sorun. Harezmi kuralı: bu sahne sorunu anlatır, çözümün adı geçmez. -->
+  <section class="slayt" aria-roledescription="sahne" aria-label="1 / 6: Sorun">
+    <div class="metin">
+      <p class="ust-baslik">01 — Sorun</p>
+      <h1>“Kalemim bitti. Kimden isteyeceğimi bilemedim.”</h1>
+      <p>Okulda her gün küçük ihtiyaçlar doğar: bir kalem, kaçırılan bir dersin notu, taşınacak bir koli, bozulan bir ayar. Yardım etmek isteyen de hep vardır.</p>
+      <p>Ama çoğu zaman ikisi birbirini <strong>bulamaz</strong>. Bulduğunda da yapılan iyilik görülmez, kısa sürede unutulur.</p>
+    </div>
+    <figure class="gorsel" data-sahne="01">
+      <img src="gorseller/sahne-01.webp" alt="Birbirine ulaşamayan iki kişi" onload="this.parentNode.classList.add('resimli')" onerror="this.remove()">
+      <svg viewBox="0 0 400 400" role="img" aria-label="İhtiyacı olan ile yardım etmek isteyen arasında birleşmeyen iki yol">
+        <rect class="s-zemin" width="400" height="400" rx="24"/>
+        <line class="s-ince" x1="40" y1="300" x2="360" y2="300"/>
+        <g transform="translate(95 260)"><circle class="s-kisi" cx="0" cy="-58" r="24"/><path class="s-kisi" d="M-38 40V0q0-26 38-26T38 0v40z"/></g>
+        <g transform="translate(305 260)"><circle class="s-kisi" cx="0" cy="-58" r="24"/><path class="s-kisi" d="M-38 40V0q0-26 38-26T38 0v40z"/></g>
+        <g transform="translate(126 262) rotate(-35)"><rect class="s-vurgu" x="0" y="-5" width="22" height="10" rx="2"/><path class="s-vurgu" d="M22-5l9 5-9 5z"/></g>
+        <path class="s-ihtiyac akis" d="M140 190Q165 120 190 160"/>
+        <path class="s-yardim akis" d="M260 190Q235 120 210 160"/>
+        <text class="s-buyuk nabiz" x="200" y="110">?</text>
+        <text class="s-soluk" x="95" y="335">ihtiyaç</text>
+        <text class="s-soluk" x="305" y="335">yardım</text>
+      </svg>
+    </figure>
+    <aside class="not">
+      <b>Anlatıcı notu:</b> Bu sahne sorunu anlatır, çözümü değil; hareketin adını burada söyleme.
+      Salona sor: “Okulda en son ne zaman bir şeye ihtiyacın olup kime soracağını bilemedin?” İki-üç cevap al.
+      Rakam verme: okulun kendi verisi ön anketlerden (Ek-1, Ek-2) sonra buraya eklenecek.
+    </aside>
+  </section>
+
+  <!-- 02 — Fikir -->
+  <section class="slayt" aria-roledescription="sahne" aria-label="2 / 6: Fikir">
+    <div class="metin">
+      <p class="ust-baslik">02 — Fikir</p>
+      <h2>Askıdan okula</h2>
+      <p>Mahalle fırınında biri iki ekmeğin parasını öder, birini askıya bırakır. İhtiyacı olan gelir, alır. Kimse kimseye borçlanmaz, kimse küçük düşmez.</p>
+      <p><strong class="vurgu">Askıda İyilik</strong> bu geleneği okula taşır, tersinden: <strong>ihtiyaç askıya asılır, okuldan biri onu üstlenir.</strong></p>
+    </div>
+    <figure class="gorsel" data-sahne="02">
+      <img src="gorseller/sahne-02.webp" alt="Askıda asılı bir iyilik etiketi" onload="this.parentNode.classList.add('resimli')" onerror="this.remove()">
+      <svg viewBox="0 0 400 400" role="img" aria-label="Bir askıda sallanan, üzerinde kalp olan etiket">
+        <rect class="s-zemin" width="400" height="400" rx="24"/>
+        <line class="s-cizgi" x1="80" y1="70" x2="320" y2="70"/>
+        <path class="s-cizgi" d="M200 70v40q0 18-14 18t-14-14"/>
+        <g class="sallan" style="transform-origin:186px 128px">
+          <path class="s-cizgi" style="stroke:#b5ab98;stroke-width:2" d="M186 128L200 176"/>
+          <rect class="s-etiket" x="130" y="168" width="140" height="172" rx="16"/>
+          <circle class="s-zemin" cx="200" cy="184" r="7"/>
+          <path class="s-vurgu" d="M200 290c-44-28-46-62-24-70 12-4 20 2 24 10 4-8 12-14 24-10 22 8 20 42-24 70z"/>
+          <text class="s-yazi-k" x="200" y="322">askıda</text>
+        </g>
+      </svg>
+    </figure>
+    <aside class="not">
+      <b>Anlatıcı notu:</b> Salonda “askıda ekmek”, “askıda kırtasiye” örneğini bilen var mı, sor; varsa onun örneğiyle bağla.
+      Vurgu: askıda kültüründe yardım alan küçük düşmez. Buzdağının dibindeki “yardım istemek ayıp” düşüncesine burada değin.
+    </aside>
+  </section>
+
+  <!-- 03 — Kimler -->
+  <section class="slayt" aria-roledescription="sahne" aria-label="3 / 6: Kimler">
+    <div class="metin">
+      <p class="ust-baslik">03 — Kimler</p>
+      <h2>Okuldaki herkes</h2>
+      <p>Öğrenci, öğretmen, idareci, yardımcı hizmetli, kantin çalışanı, güvenlik görevlisi. Herkes ihtiyacını asabilir, herkes bir ihtiyacı üstlenebilir.</p>
+      <ul>
+        <li>Bir öğrenci, kantin çalışanına telefonundaki bir ayarı gösterir.</li>
+        <li>Bir öğretmen, öğrencisine kitabını ödünç verir.</li>
+        <li>İki öğretmen nöbetlerini değişir.</li>
+        <li>Bir öğrenci, derse gelemeyen arkadaşına notlarını anlatır.</li>
+      </ul>
+      <p>Yardım <strong>yatay</strong> da akar, <strong>dikey</strong> de; her iki yönde.</p>
+    </div>
+    <figure class="gorsel" data-sahne="03">
+      <img src="gorseller/sahne-03.webp" alt="Okuldaki farklı rollerden insanlar arasında akan yardım" onload="this.parentNode.classList.add('resimli')" onerror="this.remove()">
+      <svg viewBox="0 0 400 400" role="img" aria-label="Altı rol arasında her yöne uzanan bağlar">
+        <rect class="s-zemin" width="400" height="400" rx="24"/>
+        <g class="s-ince">
+          <line x1="200" y1="70" x2="313" y2="135"/><line x1="200" y1="70" x2="313" y2="265"/><line x1="200" y1="70" x2="200" y2="330"/>
+          <line x1="200" y1="70" x2="87" y2="265"/><line x1="200" y1="70" x2="87" y2="135"/><line x1="313" y1="135" x2="313" y2="265"/>
+          <line x1="313" y1="135" x2="200" y2="330"/><line x1="313" y1="135" x2="87" y2="265"/><line x1="313" y1="135" x2="87" y2="135"/>
+          <line x1="313" y1="265" x2="200" y2="330"/><line x1="313" y1="265" x2="87" y2="265"/><line x1="313" y1="265" x2="87" y2="135"/>
+          <line x1="200" y1="330" x2="87" y2="265"/><line x1="200" y1="330" x2="87" y2="135"/><line x1="87" y1="265" x2="87" y2="135"/>
+        </g>
+        <path class="s-ihtiyac akis" d="M200 70L313 135"/>
+        <path class="s-yardim akis" d="M200 330L200 70"/>
+        <path class="s-ihtiyac akis" d="M87 265L313 265"/>
+        <path class="s-yardim akis" d="M313 135L87 135"/>
+        <g><circle class="s-kisi" cx="200" cy="70" r="38"/><text class="s-yazi-kucuk" x="200" y="74.5">Öğrenci</text></g>
+        <g><circle class="s-kisi" cx="313" cy="135" r="38"/><text class="s-yazi-kucuk" x="313" y="139.5">Öğretmen</text></g>
+        <g><circle class="s-kisi" cx="313" cy="265" r="38"/><text class="s-yazi-kucuk" x="313" y="269.5">İdare</text></g>
+        <g><circle class="s-kisi" cx="200" cy="330" r="38"/><text class="s-yazi-kucuk" x="200" y="334.5">Hizmetli</text></g>
+        <g><circle class="s-kisi" cx="87" cy="265" r="38"/><text class="s-yazi-kucuk" x="87" y="269.5">Kantin</text></g>
+        <g><circle class="s-kisi" cx="87" cy="135" r="38"/><text class="s-yazi-kucuk" x="87" y="139.5">Güvenlik</text></g>
+      </svg>
+    </figure>
+    <aside class="not">
+      <b>Anlatıcı notu:</b> Yatay: aynı roldekiler arası. Dikey: roller arası, iki yönde de.
+      En çok şaşırtan örnek genelde öğrencinin bir çalışana yardım ettiği örnektir; “öğrenci öğretmene yardım etmez”
+      gibi alışkanlıkları kırmak için oradan başla.
+    </aside>
+  </section>
+
+  <!-- 04 — Nasıl işler. Kaynak: uygulama/kredi-kurallari.md; orada değişen buraya da yansır. -->
+  <section class="slayt" aria-roledescription="sahne" aria-label="4 / 6: Nasıl işler">
+    <div class="metin">
+      <p class="ust-baslik">04 — Nasıl işler</p>
+      <h2>As, üstlen, teşekkür et</h2>
+      <ol>
+        <li>İhtiyacını askıya as. İstersen biri üstlenene kadar adın gizli kalır.</li>
+        <li>Okuldan biri “Ben yaparım” der.</li>
+        <li>Yardım yapılır.</li>
+        <li>İhtiyaç sahibi “Tamamlandı, teşekkürler” der; iyilik kaydedilir.</li>
+      </ol>
+      <p>İyilik yalnızca <strong>yardım alanın onayıyla</strong> kaydedilir; kimse kendine iyilik yazamaz. <strong>Hiçbir iyilik silinmez.</strong></p>
+      <p>Her ay bir komisyon, iyilik yapanlar arasından ayın iyilik elçilerini seçer. Sayı yalnız adaylığı belirler, seçimi insanlar yapar.</p>
+      <div class="pano">
+        <p><strong>Uygulama hazır olana kadar kâğıtla:</strong> koridordaki, kantin yanındaki ve öğretmenler odası önündeki askı panolarına
+          <span class="kart" style="background:#f2cf4a"></span><strong>sarı kart</strong> ihtiyacı yazar (ne lazım, nerede, son gün; adın ya da “anonim”).
+          Üstlenen, adını yazdığı <span class="kart" style="background:#7fb79a"></span><strong>yeşil kartı</strong> üstüne yapıştırır.
+          İş bitince ihtiyaç sahibi <span class="kart" style="background:#6fa8dc"></span><strong>mavi kartla</strong> teşekkür eder.</p>
+      </div>
+    </div>
+    <figure class="gorsel" data-sahne="04">
+      <img src="gorseller/sahne-04.webp" alt="Bir iyiliğin dört adımı" onload="this.parentNode.classList.add('resimli')" onerror="this.remove()">
+      <svg viewBox="0 0 400 400" role="img" aria-label="Dört adım: askıya as, ben yaparım, yardım yapıldı, teşekkürler">
+        <rect class="s-zemin" width="400" height="400" rx="24"/>
+        <line class="s-ince" x1="64" y1="68" x2="64" y2="338"/>
+        <circle class="s-kisi" cx="64" cy="68" r="6"/><circle class="s-kisi" cx="64" cy="158" r="6"/>
+        <circle class="s-kisi" cx="64" cy="248" r="6"/><circle class="s-kisi" cx="64" cy="338" r="6"/>
+        <rect class="s-kisi" x="90" y="40" width="260" height="56" rx="14"/><text class="s-yazi" x="220" y="73">İhtiyaç askıya asıldı</text>
+        <rect class="s-kisi" x="90" y="130" width="260" height="56" rx="14"/><text class="s-yazi" x="220" y="163">“Ben yaparım”</text>
+        <rect class="s-kisi" x="90" y="220" width="260" height="56" rx="14"/><text class="s-yazi" x="220" y="253">Yardım yapıldı</text>
+        <rect class="s-yesil" x="90" y="310" width="260" height="56" rx="14"/><text class="s-yazi-k" x="220" y="343">“Teşekkürler” ✓ kaydedildi</text>
+        <circle class="s-vurgu yolcu" cx="64" cy="68" r="10"/>
+      </svg>
+    </figure>
+    <aside class="not">
+      <b>Anlatıcı notu:</b> Uygulama henüz yazılmadı; bu bir tasarım. Kredinin adı ve aylık devir kuralı henüz karar değil;
+      sorulursa “pilotta birlikte karar vereceğiz” de. Vurgu “silinmez” kelimesinde: yapılan iyilik unutulmaz.
+      Kâğıt pano (Ek-10) aynı akışın uygulamasız hâlidir; panodan fotoğraf çekilmez, öğrenci ekibi her gün yalnız sayar.
+      Hangi ihtiyaçların asıldığı, uygulamanın kategorilerini belirleyecek.
+    </aside>
+  </section>
+
+  <!-- 05 — Sınırlar. Bilinçli tasarım kararları; değişmesi Özgür'ün onayına bağlı. -->
+  <section class="slayt" aria-roledescription="sahne" aria-label="5 / 6: Neyi yapmıyoruz">
+    <div class="metin">
+      <p class="ust-baslik">05 — Neyi yapmıyoruz</p>
+      <h2>Bilerek koymadıklarımız</h2>
+      <ul>
+        <li><strong>Sıralama tablosu yok.</strong> Kimse kimseyle yarışmaz, kimse listenin altında kalıp utanmaz.</li>
+        <li><strong>Harcanacak puan yok.</strong> İyilik alışveriş değildir; bir şey satın almaz, nota ya da disipline yansımaz.</li>
+        <li><strong>Özel mesajlaşma yok.</strong> Her şey okulun gözü önünde, güvenli kalır.</li>
+        <li><strong>Görev iyilik değildir.</strong> Kimsenin işi “iyilik” adıyla başkasına yaptırılmaz; bir isteği geri çevirmek sonuç doğurmaz.</li>
+        <li><strong>Gereksiz veri yok.</strong> TC kimlik no, telefon, fotoğraf, konum, doğum tarihi tutulmaz.</li>
+      </ul>
+    </div>
+    <figure class="gorsel" data-sahne="05">
+      <img src="gorseller/sahne-05.webp" alt="Bilerek dışarıda bırakılan dört şey" onload="this.parentNode.classList.add('resimli')" onerror="this.remove()">
+      <svg viewBox="0 0 400 400" role="img" aria-label="Üstü çizili dört simge: sıralama kürsüsü, puan, özel mesaj, iş çantası">
+        <rect class="s-zemin" width="400" height="400" rx="24"/>
+        <g transform="translate(110 115)">
+          <rect class="s-kisi" x="-48" y="-6" width="32" height="46" rx="3"/><rect class="s-kisi" x="-16" y="-30" width="32" height="70" rx="3"/><rect class="s-kisi" x="16" y="6" width="32" height="34" rx="3"/>
+          <line class="s-cizik" x1="-52" y1="-48" x2="52" y2="48"/>
+        </g>
+        <g transform="translate(290 115)">
+          <circle class="s-kisi" r="40"/><circle class="s-ince" r="29"/><text class="s-yazi" y="8" style="font-size:22px">+1</text>
+          <line class="s-cizik" x1="-52" y1="-48" x2="52" y2="48"/>
+        </g>
+        <g transform="translate(110 285)">
+          <path class="s-kisi" d="M-46-34h92a12 12 0 0 1 12 12v44a12 12 0 0 1-12 12h-56l-20 18v-18h-16a12 12 0 0 1-12-12v-44a12 12 0 0 1 12-12z"/>
+          <circle cx="-20" cy="0" r="5" fill="#f3ede1"/><circle cx="0" cy="0" r="5" fill="#f3ede1"/><circle cx="20" cy="0" r="5" fill="#f3ede1"/>
+          <line class="s-cizik" x1="-52" y1="-48" x2="52" y2="48"/>
+        </g>
+        <g transform="translate(290 285)">
+          <path class="s-cizgi" d="M-18-26v-12a6 6 0 0 1 6-6h24a6 6 0 0 1 6 6v12"/>
+          <rect class="s-kisi" x="-48" y="-26" width="96" height="66" rx="10"/><line class="s-ince" x1="-48" y1="2" x2="48" y2="2"/>
+          <line class="s-cizik" x1="-52" y1="-48" x2="52" y2="48"/>
+        </g>
+        <text class="s-soluk" x="110" y="190">sıralama tablosu</text>
+        <text class="s-soluk" x="290" y="190">harcanacak puan</text>
+        <text class="s-soluk" x="110" y="365">özel mesaj</text>
+        <text class="s-soluk" x="290" y="365">görevi iyilik saymak</text>
+      </svg>
+    </figure>
+    <aside class="not">
+      <b>Anlatıcı notu:</b> En çok soru bu sahneye gelir. Sıralama ve puan yok, çünkü dışsal ödül iyiliğin iç motivasyonunu
+      zayıflatabilir (Deci, Koestner ve Ryan, 1999). Özel mesajlaşmanın olmaması bir çocuk güvenliği kararıdır; kullanıcıların çoğu 18 yaş altı.
+      “Görev iyilik değildir” hiyerarşiyi korur: idareci ya da öğretmen, öğrenciden veya çalışandan kişisel iş isteyemez.
+    </aside>
+  </section>
+
+  <!-- 06 — Katıl. Bilerek kayıt formu yok: web'den ad/iletişim toplanmaz. -->
+  <section class="slayt" aria-roledescription="sahne" aria-label="6 / 6: Katıl">
+    <div class="metin">
+      <p class="ust-baslik">06 — Katıl</p>
+      <h2>İlk iyilik senden</h2>
+      <p>Askıda İyilik bir uygulamadan önce bir <strong>alışkanlık</strong>. Hareket bu okulda, bu yıl başlıyor.</p>
+      <p>Katılmak için form doldurmana gerek yok. Sınıf öğretmenine ya da Bilişim Teknolojileri öğretmenine “ben de varım” demen yeter.</p>
+      <p class="kucuk">Okul içi bir Harezmi Eğitim Modeli projesidir · 2026–2027</p>
+    </div>
+    <figure class="gorsel" data-sahne="06">
+      <img src="gorseller/sahne-06.webp" alt="Askıda bekleyen iyilikler ve boş bir yer" onload="this.parentNode.classList.add('resimli')" onerror="this.remove()">
+      <svg viewBox="0 0 400 400" role="img" aria-label="Askıda asılı etiketler; biri boş ve üzerinde 'senin' yazıyor">
+        <rect class="s-zemin" width="400" height="400" rx="24"/>
+        <line class="s-cizgi" x1="40" y1="60" x2="360" y2="60"/>
+        <path class="s-cizgi" style="stroke-width:3" d="M90 60v16q0 14-9 14t-9-10M150 60v16q0 14-9 14t-9-10M210 60v16q0 14-9 14t-9-10M270 60v16q0 14-9 14t-9-10M330 60v16q0 14-9 14t-9-10"/>
+        <g class="sallan" style="transform-origin:81px 90px"><line class="s-ince" style="stroke:#b5ab98" x1="81" y1="90" x2="81" y2="140"/><rect class="s-etiket" x="55" y="140" width="52" height="72" rx="10"/><circle class="s-zemin" cx="81" cy="152" r="4"/><text class="s-yazi-v" x="81" y="190" style="font-size:20px">♥</text></g>
+        <g class="sallan" style="transform-origin:141px 90px;animation-delay:-1.2s"><line class="s-ince" style="stroke:#b5ab98" x1="141" y1="90" x2="141" y2="200"/><rect class="s-etiket" x="115" y="200" width="52" height="72" rx="10"/><circle class="s-zemin" cx="141" cy="212" r="4"/><text class="s-yazi-k" x="141" y="250" style="font-size:20px">✓</text></g>
+        <g class="sallan" style="transform-origin:201px 90px;animation-delay:-2.6s"><line class="s-ince" style="stroke:#b5ab98" x1="201" y1="90" x2="201" y2="160"/><rect class="s-etiket" x="175" y="160" width="52" height="72" rx="10"/><circle class="s-zemin" cx="201" cy="172" r="4"/><text class="s-yazi-v" x="201" y="210" style="font-size:20px">♥</text></g>
+        <g class="sallan" style="transform-origin:261px 90px;animation-delay:-.6s"><line class="s-ince" style="stroke:#e9a23b" x1="261" y1="90" x2="261" y2="220"/><rect class="s-bos" x="235" y="220" width="52" height="72" rx="10"/><text class="s-yazi-v" x="261" y="261">senin</text></g>
+        <g class="sallan" style="transform-origin:321px 90px;animation-delay:-3.4s"><line class="s-ince" style="stroke:#b5ab98" x1="321" y1="90" x2="321" y2="130"/><rect class="s-etiket" x="295" y="130" width="52" height="72" rx="10"/><circle class="s-zemin" cx="321" cy="142" r="4"/><text class="s-yazi-k" x="321" y="180" style="font-size:20px">✓</text></g>
+        <text class="s-soluk" x="200" y="350">sıradaki iyilik askıda</text>
+      </svg>
+    </figure>
+    <aside class="not">
+      <b>Anlatıcı notu:</b> Bu sitede bilerek kayıt formu yok; kullanıcıların çoğu 18 yaş altı ve web'den ad ya da iletişim bilgisi toplanmaz.
+      Katılım yüz yüze olur. Bitirirken salona sor: “Bu hafta askıya ne asardın?” Cevaplar kâğıt pano pilotuna (Ek-10) başlangıç olabilir.
+    </aside>
+  </section>
+
+</main>
+
+<div class="ilerleme" aria-hidden="true"><span></span></div>
+<footer class="alt">
+  <button id="geri" type="button" aria-label="Önceki sahne">←</button>
+  <span id="sayac" aria-live="polite">01 / 06</span>
+  <button id="ileri" type="button" aria-label="Sonraki sahne">→</button>
+  <span class="bosluk"></span>
+  <span class="ipucu">← → tuşları ya da kaydırma</span>
+  <button id="indir" type="button">Görseli indir</button>
+</footer>
+
+<script>
+(() => {
+  const slaytlar = [...document.querySelectorAll('.slayt')];
+  const N = slaytlar.length;
+  const $ = id => document.getElementById(id);
+  const geri = $('geri'), ileri = $('ileri'), sayac = $('sayac');
+  const bar = document.querySelector('.ilerleme span');
+  const iki = n => String(n).padStart(2, '0');
+  let i = 0;
+
+  function git(n) {
+    i = Math.max(0, Math.min(N - 1, n));
+    slaytlar.forEach((s, k) => {
+      const aktif = k === i;
+      s.classList.toggle('aktif', aktif);
+      s.setAttribute('aria-hidden', aktif ? 'false' : 'true');
+      s.inert = !aktif;
+    });
+    slaytlar[i].scrollTop = 0;
+    sayac.textContent = iki(i + 1) + ' / ' + iki(N);
+    bar.style.width = ((i + 1) / N * 100) + '%';
+    geri.disabled = i === 0;
+    ileri.disabled = i === N - 1;
+    try { history.replaceState(null, '', '#' + (i + 1)); } catch (e) {}
+  }
+  const hashtan = () => parseInt(location.hash.slice(1), 10) - 1;
+
+  geri.onclick = () => git(i - 1);
+  ileri.onclick = () => git(i + 1);
+  window.addEventListener('hashchange', () => { const h = hashtan(); if (h >= 0 && h !== i) git(h); });
+
+  // Hareketi durdur: hareket azaltma tercihi olanlarda baştan durgun.
+  const hareket = $('hareket');
+  function durgun(d) {
+    document.body.classList.toggle('durgun', d);
+    hareket.setAttribute('aria-pressed', String(d));
+    hareket.textContent = d ? 'Hareketi başlat ▶' : 'Hareketi durdur Ⅱ';
+  }
+  hareket.onclick = () => durgun(!document.body.classList.contains('durgun'));
+  durgun(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+  const notlar = $('notlar');
+  function notAc() {
+    const acik = document.body.classList.toggle('notlar-acik');
+    notlar.setAttribute('aria-pressed', String(acik));
+  }
+  notlar.onclick = notAc;
+
+  const tamekran = $('tamekran');
+  if (!document.fullscreenEnabled) tamekran.hidden = true;
+  function tamEkran() {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else document.documentElement.requestFullscreen().catch(() => {});
+  }
+  tamekran.onclick = tamEkran;
+  document.addEventListener('fullscreenchange', () =>
+    tamekran.setAttribute('aria-pressed', String(!!document.fullscreenElement)));
+
+  document.addEventListener('keydown', e => {
+    if (e.altKey || e.ctrlKey || e.metaKey) return;
+    const dugmede = e.target.closest && e.target.closest('button,a');
+    switch (e.key) {
+      case 'ArrowRight': case 'PageDown': git(i + 1); break;
+      case 'ArrowLeft': case 'PageUp': git(i - 1); break;
+      case ' ': if (dugmede) return; git(e.shiftKey ? i - 1 : i + 1); break;
+      case 'Home': git(0); break;
+      case 'End': git(N - 1); break;
+      case 'n': case 'N': notAc(); break;
+      case 'f': case 'F': if (!tamekran.hidden) tamEkran(); break;
+      default: return;
+    }
+    e.preventDefault();
+  });
+
+  // Dokunmatik kaydırma
+  let x0 = null, y0 = null;
+  const sahne = $('sahne');
+  sahne.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; }, { passive: true });
+  sahne.addEventListener('touchend', e => {
+    if (x0 === null) return;
+    const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) git(dx < 0 ? i + 1 : i - 1);
+    x0 = y0 = null;
+  }, { passive: true });
+
+  // Görseli indir: yüklü bir görsel varsa onu, yoksa çizimi (stilleriyle) SVG olarak indirir.
+  $('indir').onclick = () => {
+    const fig = slaytlar[i].querySelector('.gorsel');
+    const ad = 'askida-iyilik-sahne-' + fig.dataset.sahne;
+    const a = document.createElement('a');
+    const img = fig.querySelector('img');
+    if (fig.classList.contains('resimli') && img) {
+      a.href = img.currentSrc || img.src;
+      a.download = ad + '.' + (a.href.split('.').pop() || 'webp');
+      a.click();
+      return;
+    }
+    const svg = fig.querySelector('svg').cloneNode(true);
+    svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    svg.setAttribute('width', '1200');
+    svg.setAttribute('height', '1200');
+    const stil = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+    stil.textContent = $('svg-stil').textContent;
+    svg.insertBefore(stil, svg.firstChild);
+    const blob = new Blob([new XMLSerializer().serializeToString(svg)], { type: 'image/svg+xml' });
+    a.href = URL.createObjectURL(blob);
+    a.download = ad + '.svg';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  };
+
+  const h = hashtan();
+  git(h >= 0 ? h : 0);
+})();
+</script>
+</body>
+</html>
